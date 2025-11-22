@@ -1,11 +1,11 @@
 from abc import ABC, abstractmethod
-import numpy as np
 import wandb
 from typing import Any
 
 from utils.jar import Jar
 from utils.training_history import TrainingHistory, TrainingHistoryEntry
 from utils.wandb_details import WandbDetails
+from data_models.data_models import InputData, OutputData, PreprocessedData
 
 
 class ModelBase(ABC):
@@ -33,17 +33,20 @@ class ModelBase(ABC):
         wandb.log(entry.to_wandb_dict())
 
     @abstractmethod
+    def initialize(self) -> None:
+        pass
+
+    @abstractmethod
     def train(
         self,
-        # TODO: Add data spec
+        data: PreprocessedData,
         epochs: int = 10,
         batch_size: int = 32
     ) -> None:
         pass
 
     @abstractmethod
-    # TODO: Add data spec
-    def predict(self, X: np.ndarray, batch_size: int = 32) -> np.ndarray:
+    def predict(self, X: InputData, batch_size: int = 32) -> OutputData:
         pass
 
     @abstractmethod
