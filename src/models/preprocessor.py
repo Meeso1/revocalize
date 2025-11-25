@@ -8,7 +8,7 @@ import torch
 from scipy import signal
 from tqdm import tqdm
 
-from data_models.data_models import UnprocessedTrainingData, AudioSegment, SegmentedAudio
+from src.data_models.data_models import UnprocessedTrainingData, AudioSegment, SegmentedAudio
 
 
 class Preprocessor:
@@ -148,7 +148,7 @@ class Preprocessor:
 
         return SegmentedAudio(segments)
 
-    def _load_audio(self, file_path: str) -> tuple[np.ndarray, int]:
+    def _load_audio(self, file_path: str) -> tuple[np.ndarray, int]: # ([n_samples], sample_rate)
         """
         Load audio file and normalize to float32 in range [-1, 1].
 
@@ -164,7 +164,6 @@ class Preprocessor:
         if waveform.shape[0] > 1:
             waveform = torch.mean(waveform, dim=0, keepdim=True)
 
-        # Convert to numpy and ensure float32
         audio = waveform.squeeze().numpy().astype(np.float32)
 
         # Normalize to [-1, 1] if not already
@@ -174,7 +173,11 @@ class Preprocessor:
 
         return audio, sample_rate
 
-    def _denoise_audio(self, audio: np.ndarray, sample_rate: int) -> np.ndarray:
+    def _denoise_audio(
+        self,
+        audio: np.ndarray,  # [n_samples]
+        sample_rate: int,
+    ) -> np.ndarray:  # [n_samples]
         """
         Apply high-pass Butterworth filter to remove low-frequency noise.
 
@@ -197,7 +200,11 @@ class Preprocessor:
         denoised = signal.filtfilt(b, a, audio)
         return denoised.astype(np.float32)
 
-    def _split_on_silence(self, audio: np.ndarray, sample_rate: int) -> list[np.ndarray]:
+    def _split_on_silence(
+        self,
+        audio: np.ndarray,  # [n_samples]
+        sample_rate: int,
+    ) -> list[np.ndarray]:  # list of [n_segment_samples_i]
         """
         Split audio at silence gaps longer than silence_duration.
 
@@ -237,7 +244,6 @@ class Preprocessor:
                 splits.append(audio[last_end:silence_start])
             last_end = silence_end
 
-        # Add remaining audio after last silence
         if last_end < len(audio):
             splits.append(audio[last_end:])
 
@@ -247,7 +253,11 @@ class Preprocessor:
 
         return splits
 
-    def _create_chunks(self, audio: np.ndarray, sample_rate: int) -> list[np.ndarray]:
+    def _create_chunks(
+        self,
+        audio: np.ndarray,  # [n_samples]
+        sample_rate: int,
+    ) -> list[np.ndarray]:  # list of [n_chunk_samples_i]
         """
         Create fixed-duration chunks with overlap from audio segment.
 
@@ -278,7 +288,10 @@ class Preprocessor:
 
         return chunks
 
-    def _normalize_volume(self, audio: np.ndarray) -> np.ndarray:
+    def _normalize_volume(
+        self,
+        audio: np.ndarray,  # [n_samples]
+    ) -> np.ndarray:  # [n_samples]
         """
         Normalize volume of audio segment to [-1, 1] range.
 
@@ -291,9 +304,36 @@ class Preprocessor:
         max_val = np.abs(audio).max()
         return audio / max_val if max_val > 0 else audio
 
+    def prepare_inference_audio(
+        self,
+        audio: np.ndarray,  # [n_samples]
+        sample_rate: int,
+    ) -> AudioSegment:
+        """
+        Prepare audio for inference by applying normalization, denoising, and resampling.
+
+        Args:
+            audio: Input audio signal [n_samples]
+            sample_rate: Sample rate of the audio in Hz
+
+        Returns:
+            AudioSegment ready for feature extraction
+        """
+        audio = self._normalize_volume(audio)
+        audio = self._denoise_audio(audio, sample_rate)
+        
+        if sample_rate != self.target_sample_rate:
+            audio = self._resample(audio, sample_rate, self.target_sample_rate)
+            sample_rate = self.target_sample_rate
+        
+        return AudioSegment(audio=audio, sample_rate=sample_rate)
+
     def _resample(
-        self, audio: np.ndarray, original_sample_rate: int, target_sample_rate: int
-    ) -> np.ndarray:
+        self,
+        audio: np.ndarray,  # [n_samples]
+        original_sample_rate: int,
+        target_sample_rate: int,
+    ) -> np.ndarray:  # [n_resampled_samples]
         """
         Resample audio to target sample rate.
 

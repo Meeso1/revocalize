@@ -1,11 +1,11 @@
 from abc import ABC, abstractmethod
-import wandb
 from typing import Any
+import wandb
 
-from utils.jar import Jar
-from utils.training_history import TrainingHistory, TrainingHistoryEntry
-from utils.wandb_details import WandbDetails
-from data_models.data_models import InputData, OutputData, PreprocessedData
+from src.utils.jar import Jar
+from src.utils.training_history import TrainingHistory, TrainingHistoryEntry
+from src.utils.wandb_details import WandbDetails
+from src.data_models.data_models import InputData, OutputData, PreprocessedData
 
 
 class ModelBase(ABC):
@@ -31,10 +31,6 @@ class ModelBase(ABC):
 
     def log_to_wandb(self, entry: TrainingHistoryEntry) -> None:
         wandb.log(entry.to_wandb_dict())
-
-    @abstractmethod
-    def initialize(self) -> None:
-        pass
 
     @abstractmethod
     def train(self, data: PreprocessedData, epochs: int = 10, batch_size: int = 32) -> None:

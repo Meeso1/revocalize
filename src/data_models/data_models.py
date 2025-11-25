@@ -14,7 +14,7 @@ class SavedPreprocessedData:
 
 @dataclass
 class AudioSegment:
-    audio: np.ndarray
+    audio: np.ndarray  # [n_samples]
     sample_rate: int
 
 
@@ -25,16 +25,16 @@ class SegmentedAudio:
 
 @dataclass
 class PreprocessedSample:
-    content_vector: np.ndarray
-    pitch_feature: np.ndarray
-    audio: np.ndarray
+    content_vector: np.ndarray  # [n_frames, content_dim]
+    pitch_feature: np.ndarray  # [n_frames]
+    audio: np.ndarray  # [n_samples]
 
 
 @dataclass
 class PreprocessedData:
-    content_vectors: np.ndarray
-    pitch_features: np.ndarray
-    audios: list[np.ndarray]
+    content_vectors: np.ndarray  # [n_samples, n_frames, content_dim]
+    pitch_features: np.ndarray  # [n_samples, n_frames]
+    audios: list[np.ndarray]  # list of [n_samples_i]
 
     @staticmethod
     def from_samples(samples: list[PreprocessedSample]) -> "PreprocessedData":
@@ -52,10 +52,10 @@ class FaissIndex:
 
 @dataclass
 class InputData:
-    content_vectors: np.ndarray
-    pitch_features: np.ndarray
+    content_vectors: np.ndarray  # [n_samples, n_frames, content_dim]
+    pitch_features: np.ndarray  # [n_samples, n_frames]
 
 
 @dataclass
 class OutputData:
-    wav_data: list[np.ndarray]
+    wav_data: list[np.ndarray]  # list of [n_samples_i]
