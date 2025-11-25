@@ -34,13 +34,15 @@ class Jar:
         dir_path = self._get_dir_path(name)
         if not os.path.exists(dir_path):
             return {}
-        
-        files = [f for f in os.listdir(dir_path)
-                 if f.startswith(os.path.basename(name) + '-')
-                 and f.endswith('.pkl')]
+
+        files = [
+            f
+            for f in os.listdir(dir_path)
+            if f.startswith(os.path.basename(name) + "-") and f.endswith(".pkl")
+        ]
 
         return {
-            os.path.join(dir_path, f): datetime.fromtimestamp(int(f.split('-')[-1].split('.')[0])) 
+            os.path.join(dir_path, f): datetime.fromtimestamp(int(f.split("-")[-1].split(".")[0]))
             for f in files
         }
 
@@ -63,7 +65,7 @@ class Jar:
         full_path = self._get_full_path(name)
         os.makedirs(os.path.dirname(full_path), exist_ok=True)
 
-        with open(full_path, 'wb') as f:
+        with open(full_path, "wb") as f:
             pickle.dump(obj, f)
 
     def get(self, name: str) -> Any:
@@ -77,7 +79,7 @@ class Jar:
             Any: The loaded object.
         """
         full_path = self._get_latest_file(name)
-        with open(full_path, 'rb') as f:
+        with open(full_path, "rb") as f:
             return pickle.load(f)
 
     def get_all(self, name: str) -> dict[datetime, Any]:
@@ -94,7 +96,7 @@ class Jar:
         results: dict[datetime, Any] = {}
 
         for f, timestamp in files.items():
-            with open(f, 'rb') as file:
+            with open(f, "rb") as file:
                 results[timestamp] = pickle.load(file)
 
         return results
@@ -108,7 +110,7 @@ class Jar:
         """
         full_path = self._get_latest_file(name)
         os.remove(full_path)
-        
+
     def remove_all_but_latest(self, name: str) -> None:
         """
         Delete all objects with the given name, except the most recent one.
@@ -156,12 +158,12 @@ class Jar:
         base_dir = os.path.join(self.base_path, self.prefix)
         for root, _, files in os.walk(base_dir):
             for file in files:
-                if not file.endswith('.pkl'):
+                if not file.endswith(".pkl"):
                     continue
 
                 relative_path = os.path.relpath(root, base_dir)
-                name = '-'.join(file.split('-')[:-1]) # Remove part after last '-' (timestamp)
-                object_name = os.path.join(relative_path, name).replace('\\', '/')
+                name = "-".join(file.split("-")[:-1])  # Remove part after last '-' (timestamp)
+                object_name = os.path.join(relative_path, name).replace("\\", "/")
                 object_names.add(object_name)
-                
+
         return object_names

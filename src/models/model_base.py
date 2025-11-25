@@ -18,7 +18,7 @@ class ModelBase(ABC):
                 project=self.wandb_details.project,
                 name=self.wandb_details.experiment_name,
                 config=self.get_config_for_wandb(),
-                settings=wandb.Settings(silent=True)
+                settings=wandb.Settings(silent=True),
             )
 
     def finish_wandb_if_needed(self) -> None:
@@ -37,12 +37,7 @@ class ModelBase(ABC):
         pass
 
     @abstractmethod
-    def train(
-        self,
-        data: PreprocessedData,
-        epochs: int = 10,
-        batch_size: int = 32
-    ) -> None:
+    def train(self, data: PreprocessedData, epochs: int = 10, batch_size: int = 32) -> None:
         pass
 
     @abstractmethod
@@ -76,6 +71,6 @@ class ModelBase(ABC):
     def _save_model_to_wandb(self, name: str, path: str) -> None:
         artifact = wandb.Artifact(name=name, type="model", description="Model state dict")
         artifact.add_file(path)
-        
+
         logged_artifact = wandb.log_artifact(artifact)
         logged_artifact.wait()

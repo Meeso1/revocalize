@@ -14,8 +14,8 @@ class SavedPreprocessedData:
 
 @dataclass
 class AudioSegment:
-    audio: np.ndarray  # [n_samples] - float32, normalized [-1, 1]
-    sample_rate: int  # Should be 16000 for ContentVec compatibility
+    audio: np.ndarray
+    sample_rate: int
 
 
 @dataclass
@@ -25,40 +25,37 @@ class SegmentedAudio:
 
 @dataclass
 class PreprocessedSample:
-    content_vector: np.ndarray  # [n_frames, n_content_features]
-    pitch_feature: np.ndarray  # [n_frames, n_pitch_features]
-    audio: np.ndarray  # [n_samples]
+    content_vector: np.ndarray
+    pitch_feature: np.ndarray
+    audio: np.ndarray
 
 
 @dataclass
 class PreprocessedData:
-    content_vectors: np.ndarray  # [n_segments, n_frames, n_content_features]
-    pitch_features: np.ndarray  # [n_segments, n_frames, n_pitch_features]
-    audios: list[np.ndarray]  # [n_segments] each with shape [n_samples]
-    
+    content_vectors: np.ndarray
+    pitch_features: np.ndarray
+    audios: list[np.ndarray]
+
     @staticmethod
-    def from_samples(samples: list[PreprocessedSample]) -> 'PreprocessedData':
+    def from_samples(samples: list[PreprocessedSample]) -> "PreprocessedData":
         return PreprocessedData(
-            content_vectors=np.stack([sample.content_vector for sample in samples]),
-            pitch_features=np.stack([sample.pitch_feature for sample in samples]),
-            audios=[sample.audio for sample in samples]
+            content_vectors=np.stack([s.content_vector for s in samples]),
+            pitch_features=np.stack([s.pitch_feature for s in samples]),
+            audios=[s.audio for s in samples],
         )
 
 
 @dataclass
 class FaissIndex:
-    # TODO: Add representation
     pass
 
 
 @dataclass
 class InputData:
-    # TODO: Verify
-    content_vectors: np.ndarray # [n_samples, n_content_features]
-    pitch_features: np.ndarray # [n_samples, n_pitch_features]
+    content_vectors: np.ndarray
+    pitch_features: np.ndarray
 
 
 @dataclass
 class OutputData:
-    # TODO: Verify
-    wav_data: list[np.ndarray]  # [n_samples] each with shape [n_audio_samples]
+    wav_data: list[np.ndarray]

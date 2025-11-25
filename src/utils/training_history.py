@@ -8,9 +8,7 @@ class TrainingHistoryEntry:
     # TODO: Expand
 
     def to_wandb_dict(self) -> dict[str, float | None]:
-        return {
-            "train_loss": self.total_loss
-        }
+        return {"train_loss": self.total_loss}
 
 
 @dataclass
