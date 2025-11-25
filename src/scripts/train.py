@@ -11,8 +11,17 @@ import torch.nn.functional as F
 from src.models.generator import Generator
 from src.data_models.data_models import PreprocessedSample
 
+
 class VoiceDataset(Dataset):
-    def __init__(self, feature_dir: str, data_dir: str, content_sr: int = 16000, hop_length: int = 320, target_sr: int = 48000, segment_frames: int = 64):
+    def __init__(
+        self,
+        feature_dir: str,
+        data_dir: str,
+        content_sr: int = 16000,
+        hop_length: int = 320,
+        target_sr: int = 48000,
+        segment_frames: int = 64,
+    ):
         self.feature_dir = Path(feature_dir)
         self.data_dir = Path(data_dir)
         self.content_sr = content_sr
@@ -72,8 +81,10 @@ class VoiceDataset(Dataset):
             content_vector=content_t.numpy(), pitch_feature=f0_t.numpy(), audio=audio_t.numpy()
         )
 
+
 def normalize_length(tensors, target_len):
     return [F.pad(t, (0, max(0, target_len - t.shape[0])))[:target_len] for t in tensors]
+
 
 def collate_fn(batch):
     target_len = batch[0].content_vector.shape[0]
@@ -87,7 +98,9 @@ def collate_fn(batch):
 
 def train_model(args):
     dataset = VoiceDataset(args.feature_dir, args.data_dir)
-    dataloader = DataLoader(dataset, batch_size=args.batch_size, shuffle=True, collate_fn=collate_fn)
+    dataloader = DataLoader(
+        dataset, batch_size=args.batch_size, shuffle=True, collate_fn=collate_fn
+    )
 
     model = Generator(content_dim=args.content_dim, use_pitch=args.use_pitch)
     model.train()
@@ -125,6 +138,7 @@ def train_model(args):
     model_path.parent.mkdir(parents=True, exist_ok=True)
     torch.save(model.state_dict(), model_path)
     print(f"Model saved to: {model_path}")
+
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()

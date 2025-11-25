@@ -1,11 +1,16 @@
 import argparse
 import subprocess
 
+
 def run_preprocess(args):
     cmd = [
-        "python", "-m", "src.scripts.preprocess",
-        "--data_dir", args.data_dir,
-        "--out_dir", args.out_dir
+        "python",
+        "-m",
+        "src.scripts.preprocess",
+        "--data_dir",
+        args.data_dir,
+        "--out_dir",
+        args.out_dir,
     ]
     if args.hubert_path:
         cmd += ["--hubert_path", args.hubert_path]
@@ -16,14 +21,23 @@ def run_preprocess(args):
 
 def run_train(args):
     cmd = [
-        "python", "-m", "src.scripts.train",
-        "--feature_dir", args.feature_dir,
-        "--data_dir", args.data_dir,
-        "--epochs", str(args.epochs),
-        "--batch_size", str(args.batch_size),
-        "--out_model", args.out_model,
-        "--content_dim", str(args.content_dim),
-        "--target_sr", str(args.target_sr)
+        "python",
+        "-m",
+        "src.scripts.train",
+        "--feature_dir",
+        args.feature_dir,
+        "--data_dir",
+        args.data_dir,
+        "--epochs",
+        str(args.epochs),
+        "--batch_size",
+        str(args.batch_size),
+        "--out_model",
+        args.out_model,
+        "--content_dim",
+        str(args.content_dim),
+        "--target_sr",
+        str(args.target_sr),
     ]
     if args.use_pitch:
         cmd.append("--use_pitch")
@@ -32,10 +46,15 @@ def run_train(args):
 
 def run_infer(args):
     cmd = [
-        "python", "-m", "src.scripts.infer",
-        "--input", args.input,
-        "--model", args.model,
-        "--output", args.output
+        "python",
+        "-m",
+        "src.scripts.infer",
+        "--input",
+        args.input,
+        "--model",
+        args.model,
+        "--output",
+        args.output,
     ]
     if args.hubert_path:
         cmd += ["--hubert_path", args.hubert_path]

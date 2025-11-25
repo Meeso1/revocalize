@@ -9,8 +9,12 @@ from src.models.generator import Generator
 
 def main():
     parser = argparse.ArgumentParser(description="Run inference to convert voice.")
-    parser.add_argument("--input", type=str, required=True, help="Path to input audio file (.wav or .mp3).")
-    parser.add_argument("--model", type=str, required=True, help="Path to trained generator .pth file.")
+    parser.add_argument(
+        "--input", type=str, required=True, help="Path to input audio file (.wav or .mp3)."
+    )
+    parser.add_argument(
+        "--model", type=str, required=True, help="Path to trained generator .pth file."
+    )
     parser.add_argument("--output", type=str, required=True, help="Path to save output audio.")
     parser.add_argument("--hubert_path", type=str, help="Path to HuBERT model.")
     parser.add_argument("--rmvpe_path", type=str, help="Path to RMVPE model.")
@@ -21,7 +25,6 @@ def main():
 
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
-    # Load audio
     waveform, sr = torchaudio.load(args.input)
     if waveform.size(0) > 1:
         waveform = waveform.mean(dim=0, keepdim=True)
@@ -34,15 +37,14 @@ def main():
     content = content.unsqueeze(0).to(device)
     f0 = f0.unsqueeze(0).to(device) if args.use_pitch else None
 
-    model = Generator(
-        content_dim=769, use_pitch=args.use_pitch, target_sr=args.target_sr
-    ).to(device)
+    model = Generator(content_dim=769, use_pitch=args.use_pitch, target_sr=args.target_sr).to(
+        device
+    )
     model.load_state_dict(torch.load(args.model, map_location=device))
     model.eval()
 
-    # 🔧 SMALL FIX: add a zero channel if needed so content matches conv input channels
-    expected_in_ch = model.content_conv.in_channels  # e.g. 769
-    cur_ch = content.shape[-1]                       # e.g. 768
+    expected_in_ch = model.content_conv.in_channels
+    cur_ch = content.shape[-1]
 
     if cur_ch < expected_in_ch:
         pad_ch = expected_in_ch - cur_ch
@@ -58,7 +60,6 @@ def main():
     with torch.inference_mode():
         wav = model(content, f0 if args.use_pitch else None).cpu()
 
-    # Make sure we end up with [samples]
     if wav.dim() == 3:
         wav = wav[0, 0]
     elif wav.dim() == 2:

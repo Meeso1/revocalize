@@ -1,4 +1,5 @@
 import os
+
 os.environ["TORCHAUDIO_USE_TORCHCODEC"] = "0"
 
 import torchaudio
@@ -10,15 +11,24 @@ import argparse
 from src.models.audio_encoder import AudioEncoder
 from src.models.index_creator import IndexCreator
 
-if hasattr(torchaudio, 'set_audio_backend'):
+if hasattr(torchaudio, "set_audio_backend"):
     torchaudio.set_audio_backend("sox_io")
+
 
 def main():
     parser = argparse.ArgumentParser(description="Preprocess audio data for RVC.")
-    parser.add_argument("--data_dir", type=str, required=True, help="Directory with raw audio files (wav/flac).")
-    parser.add_argument("--out_dir", type=str, required=True, help="Output directory for features and index.")
-    parser.add_argument("--hubert_path", type=str, default=None, help="Path to HuBERT/ContentVec model (optional).")
-    parser.add_argument("--rmvpe_path", type=str, default=None, help="Path to RMVPE pitch model (optional).")
+    parser.add_argument(
+        "--data_dir", type=str, required=True, help="Directory with raw audio files (wav/flac)."
+    )
+    parser.add_argument(
+        "--out_dir", type=str, required=True, help="Output directory for features and index."
+    )
+    parser.add_argument(
+        "--hubert_path", type=str, default=None, help="Path to HuBERT/ContentVec model (optional)."
+    )
+    parser.add_argument(
+        "--rmvpe_path", type=str, default=None, help="Path to RMVPE pitch model (optional)."
+    )
     args = parser.parse_args()
 
     data_dir = Path(args.data_dir)
@@ -74,6 +84,7 @@ def main():
     index_creator.save(str(out_dir / "faiss_index.index"))
     np.save(out_dir / "content_vectors.npy", combined_vectors)
     print(f"FAISS index saved. Indexed {combined_vectors.shape[0]} vectors.")
+
 
 if __name__ == "__main__":
     main()
