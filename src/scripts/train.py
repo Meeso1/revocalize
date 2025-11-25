@@ -6,21 +6,13 @@ import torchaudio
 from pathlib import Path
 import argparse
 from torch.utils.data import Dataset, DataLoader
+import torch.nn.functional as F
 
-from generator import Generator
-from data_models import PreprocessedSample
-
+from src.models.generator import Generator
+from src.data_models.data_models import PreprocessedSample
 
 class VoiceDataset(Dataset):
-    def __init__(
-        self,
-        feature_dir: str,
-        data_dir: str,
-        content_sr: int = 16000,
-        hop_length: int = 320,
-        target_sr: int = 48000,
-        segment_frames: int = 64,
-    ):
+    def __init__(self, feature_dir: str, data_dir: str, content_sr: int = 16000, hop_length: int = 320, target_sr: int = 48000, segment_frames: int = 64):
         self.feature_dir = Path(feature_dir)
         self.data_dir = Path(data_dir)
         self.content_sr = content_sr
@@ -79,3 +71,70 @@ class VoiceDataset(Dataset):
         return PreprocessedSample(
             content_vector=content_t.numpy(), pitch_feature=f0_t.numpy(), audio=audio_t.numpy()
         )
+
+def normalize_length(tensors, target_len):
+    return [F.pad(t, (0, max(0, target_len - t.shape[0])))[:target_len] for t in tensors]
+
+def collate_fn(batch):
+    target_len = batch[0].content_vector.shape[0]
+
+    contents = normalize_length([torch.tensor(s.content_vector).float() for s in batch], target_len)
+    pitches = normalize_length([torch.tensor(s.pitch_feature).float() for s in batch], target_len)
+    audios = normalize_length([torch.tensor(s.audio).float().squeeze(0) for s in batch], target_len)
+
+    return torch.stack(contents), torch.stack(pitches), torch.stack(audios)
+
+
+def train_model(args):
+    dataset = VoiceDataset(args.feature_dir, args.data_dir)
+    dataloader = DataLoader(dataset, batch_size=args.batch_size, shuffle=True, collate_fn=collate_fn)
+
+    model = Generator(content_dim=args.content_dim, use_pitch=args.use_pitch)
+    model.train()
+
+    optimizer = torch.optim.Adam(model.parameters(), lr=1e-4)
+    criterion = torch.nn.L1Loss()
+
+    for epoch in range(args.epochs):
+        for i, (contents, pitches, audios) in enumerate(dataloader):
+            # contents: [B, T, C], pitches: [B, T], audios: [B, S]
+            if args.use_pitch:
+                pitches = pitches.unsqueeze(-1) if pitches.ndim == 2 else pitches  # [B, T, 1]
+                inputs = torch.cat([contents, pitches], dim=-1)  # [B, T, C+1]
+            else:
+                inputs = contents
+
+            outputs = model(inputs)  # [B, 1, S] or similar
+
+            if outputs.ndim == 3:
+                outputs = outputs.squeeze(1)
+
+            min_len = min(outputs.shape[1], audios.shape[1])
+            outputs = outputs[:, :min_len]
+            audios = audios[:, :min_len]
+
+            loss = criterion(outputs, audios)
+            optimizer.zero_grad()
+            loss.backward()
+            optimizer.step()
+
+            if i % 1 == 0:
+                print(f"Epoch {epoch} Batch {i}: Loss = {loss.item():.4f}")
+
+    model_path = Path(args.out_model)
+    model_path.parent.mkdir(parents=True, exist_ok=True)
+    torch.save(model.state_dict(), model_path)
+    print(f"Model saved to: {model_path}")
+
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--feature_dir", required=True)
+    parser.add_argument("--data_dir", required=True)
+    parser.add_argument("--epochs", type=int, default=10)
+    parser.add_argument("--batch_size", type=int, default=2)
+    parser.add_argument("--out_model", default="generator.pth")
+    parser.add_argument("--content_dim", type=int, default=256)
+    parser.add_argument("--use_pitch", action="store_true")
+    parser.add_argument("--target_sr", type=int, default=48000)
+    args = parser.parse_args()
+    train_model(args)

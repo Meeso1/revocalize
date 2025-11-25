@@ -51,7 +51,8 @@ class Generator(nn.Module):
         self.activation = nn.LeakyReLU(negative_slope=0.01)
 
     def forward(self, content_units: torch.Tensor, pitch: torch.Tensor = None) -> torch.Tensor:
-        B, T, C = content_units.shape
+        if content_units.dim() == 2:
+            content_units = content_units.unsqueeze(0)
         x = content_units.transpose(1, 2)
         x = self.content_conv(x)
         if self.use_pitch and pitch is not None:
