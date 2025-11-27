@@ -18,6 +18,12 @@ dependencies = [
     "faiss-cpu"
 ]
 
+[dependency-groups]
+notebook = [
+    "pandas>=2.2.0",
+    "faiss-cpu>=1.8.0", # make a bottom cap of 1.8.0 version for notebooks
+]
+
 [tool.ruff]
 line-length = 100
 target-version = "py313"
